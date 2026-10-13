@@ -42,7 +42,7 @@ dialog{border:2px solid var(--ink);border-radius:4px;padding:30px;width:590px;ma
 [data-startup-disabled]{opacity:.5;cursor:default}[data-startup-disabled]:hover{box-shadow:none}
 @media(max-width:700px){.startup-notice{font-size:11px;padding:7px 9px}}
 
-</style></head>
+</style><link rel="stylesheet" href="game.css?v=20261013-1"></head>
 <body>
 <header><a class="brand" href="#"><span class="brand-icon" aria-hidden="true">漫</span> 番年史 <span class="brand-en">ANIME ATLAS</span></a><div class="header-actions"><span class="local-badge">2000—2026</span><button disabled data-startup-disabled id="export"><span aria-hidden="true">↓</span> 导出<span class="desktop-label">记录</span></button><button disabled data-startup-disabled id="import"><span aria-hidden="true">↑</span> 导入<span class="desktop-label">记录</span></button><input disabled data-startup-disabled type="file" id="importFile" accept="application/json,.json" hidden></div></header>
 <main>
@@ -54,7 +54,7 @@ dialog{border:2px solid var(--ink);border-radius:4px;padding:30px;width:590px;ma
 <div class="table-footer"><span class="touch-hint">左右滑动浏览 · 轻点标记 · 长按详情</span><div class="legend"><span><i></i>灰暗 · 未看</span><span><i class="green"></i>彩色 · 看过</span><span><i class="future"></i>快照时尚未首播</span></div><span>每年一行，按首播时间连续排列 · 向右滑动 →</span></div>
 </section>
 <div class="bottom"><span>记录保存在当前浏览器 · 海报联网加载</span><button disabled data-startup-disabled id="about">收录规则与数据来源 ↗</button></div>
-<p id="storageWarning" class="warning" hidden>浏览器禁止了本地存储，当前记录只保留在本次页面中。离开前请导出备份。</p>
+<p id="storageWarning" class="warning" hidden>本地记录读取或保存失败；新增记录可能无法持久保存。离开前请导出备份。</p>
 </main>
 <aside id="tooltip" class="tooltip" role="tooltip" hidden></aside>
 <dialog id="details"><button disabled data-startup-disabled class="close" aria-label="关闭">×</button><div id="detailContent"></div><div class="detail-actions"><button disabled data-startup-disabled id="detailToggle" class="primary">标记看过</button><a id="sourceLink" target="_blank" rel="noopener noreferrer">在 Bangumi 查看 ↗</a></div></dialog>
@@ -184,6 +184,7 @@ function toggle(id) {
   save();stats();
   const button=$('tableBody').querySelector(`[data-id="${id}"]`);
   if(button) {button.classList.toggle('watched',watched.has(id));button.setAttribute('aria-pressed',String(watched.has(id)));const a=byId.get(id);button.setAttribute('aria-label',a.name+'，'+a.date+'，'+(watched.has(id)?'已看过':'未看'));if(hoveredId===id)showTooltip(button);}
+  window.AtlasGame?.onWatch(id,watched.has(id));
   if($('state').value)render();
   if($('details').open&&selectedId===id) {$('detailContent').innerHTML=detailsHTML(byId.get(id),true);$('detailToggle').textContent=watched.has(id)?'取消看过':'标记看过';}
   notify((watched.has(id)?'已点亮 · ':'已取消 · ')+byId.get(id).name);
@@ -224,7 +225,7 @@ document.querySelectorAll('dialog .close').forEach(b=>b.onclick=()=>b.closest('d
 $('about').onclick=()=>$('aboutDialog').showModal();
 $('sourceNotes').innerHTML=DATA?`<p>来自 Bangumi 官方数据归档，快照日期 <b>${DATA.meta.snapshot}</b>。本页收录 <b>${records.length.toLocaleString()}</b> 个首播年份在 2000–2026 年之间、具有日本制作地区字段或标签的动画条目；包含 TV、剧场版、OVA、WEB、短片等，按每年每月热度前 30% 精选。已剔除 ${DATA.meta.adultExcluded.toLocaleString()} 个带有成人标记或明确色情标签的条目。</p><p>热度按 Bangumi 累计收藏总人数（想看＋看过＋在看＋搁置＋抛弃）计算，以首播年和月分组。基准为通过前述内容规则的 ${DATA.meta.popularityFilter.inputCount.toLocaleString()} 部作品，不按 TV／剧场版等类型分榜；前 30% 名额向上取整。同热度依次按看过人数、评分人数、条目 ID 排序。排名先计算，再排除收藏少于 100 人、以及至少 20 人评分且低于 4/10 分的作品，不补录名额。零分／未评分不视为低分。</p><p>当前热度是 ${DATA.meta.snapshot} 快照时的累计数据，不是作品当年首播时的实时榜单。月份不明的条目不能参加月榜，已排除。搜索和页面筛选不会重新计算名次；每部作品的月榜名次、收藏人数和评分人数在悬停详情中显示。</p><p>${Object.entries(DATA.meta.regionCounts).map(([k,v])=>escapeHTML(k)+'：'+v.toLocaleString()+' 部').join('<br>')}</p><p>新增排除：制作地区非日本或依据不足 ${DATA.meta.scopeExcludedCounts.production||0} 部、明确非日语／无对白 ${DATA.meta.scopeExcludedCounts.language||0} 部、婴幼儿／学龄前向 ${DATA.meta.scopeExcludedCounts.preschool||0} 部（按首次命中原因计数）。</p><p>不再凭日文标题判断日本制作。低幼筛选参考幼教标签、简介及巧虎、面包超人等系列，不把普通少年向或所有“子供向”直接判为婴幼儿向。多数条目缺少配音语言字段，未标注者暂按日本制作推定日语；可通过“语言依据”筛选仅查看明确有日语字段／标签的作品。制作地区含日本的合拍作品仍保留。这是数据库快照，不能保证囊括历史上所有作品。地区不明、误标、尚未录入的作品可能缺失。另有 ${DATA.meta.undatedJapanese.toLocaleString()} 个具有日本地区证据、但缺少可用年份的条目未排入表格（其年份也可能在范围之外）；排除记录可查阅目录中的 data-audit.json。</p><p>2026 年尚未结束，未来档期可能变化；首播年份按数据库记录，不代表重播年份。观看记录通过条目 ID 保存。</p>`:'<p>数据文件未加载，请确认 data.js 与 index.html 在同一目录。</p>';
 $('export').onclick=()=>{
-  const data={format:'anime-atlas-watchlist',version:1,source:'Bangumi',exportedAt:new Date().toISOString(),watched:[...watched].sort((a,b)=>a-b)};
+  const data={format:'anime-atlas-watchlist',version:1,source:'Bangumi',exportedAt:new Date().toISOString(),watched:[...watched].sort((a,b)=>a-b),player:window.AtlasGame?.exportState()};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='追番记录-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('观看记录已导出');
 };
 $('import').onclick=()=>$('importFile').click();
@@ -234,10 +235,11 @@ $('importFile').onchange=async e=>{
     if(file.size>5*1024*1024)throw Error('文件超过 5 MB');
     const data=JSON.parse(await file.text());
     if(data.format!=='anime-atlas-watchlist'||data.version!==1||data.source!=='Bangumi'||!Array.isArray(data.watched)||data.watched.some(id=>!Number.isSafeInteger(id)||id<=0))throw Error('不是有效的番年史备份文件');
-    const before=watched.size;for(const id of data.watched)watched.add(id);save();render();notify(`已合并 ${watched.size-before} 条记录；现有标记保留`);
+    const profile=window.AtlasGame?.validateImport(data.player);
+    const before=watched.size;for(const id of data.watched)watched.add(id);save();render();window.AtlasGame?.importState(profile);notify(`已合并 ${watched.size-before} 条记录；现有标记保留`);
   }catch(error){notify('导入失败：'+error.message);}finally{e.target.value='';}
 };
-window.addEventListener('storage',e=>{if(e.key!==KEY)return;try{const ids=JSON.parse(e.newValue||'[]');if(Array.isArray(ids)&&ids.every(Number.isSafeInteger)){watched=new Set(ids);render();}}catch{}});
+window.addEventListener('storage',e=>{if(e.key!==KEY&&e.key!==null)return;try{const ids=JSON.parse(e.key===KEY?e.newValue||'[]':'[]');if(Array.isArray(ids)&&ids.every(Number.isSafeInteger)){watched=new Set(ids);render();window.AtlasGame?.onRecords();}}catch{}});
 render();
 window.ANIME_APP_READY = true;
 document.documentElement.classList.add('app-ready');
@@ -248,4 +250,6 @@ document.querySelectorAll('[data-startup-disabled]').forEach(control=>{
 });
 
 </script>
+<script src="share-qr.js?v=20261013-1"></script>
+<script src="game.js?v=20261013-1"></script>
 </body></html>
