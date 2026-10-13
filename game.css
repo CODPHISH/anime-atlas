@@ -23,3 +23,6 @@ html[data-motion=off] *,html[data-motion=off] *:before,html[data-motion=off] *:a
 @media(max-height:620px){.game-hud .pixel-badge,.game-hud .hud-progress,.game-hud .game-kicker{display:none}.hud-row{padding-block:5px}.game-hud .hud-identity strong{font-size:12px}}
 @media(max-width:700px){.hud-identity strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hud-actions{flex-shrink:0}.hud-identity{flex-basis:70px}.game-hud.is-collapsed .hud-identity{flex-basis:0}.profile-form{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media(max-width:380px){.hud-row .pixel-badge{display:none}.hud-actions{gap:4px}.hud-actions button{padding-inline:6px}.hud-identity{flex-basis:58px}.profile-numbers{gap:15px}}
+/* Match the class specificity of the desktop dialog width. The base mobile
+   dialog rule alone cannot override .game-dialog's 760px width. */
+@media(max-width:700px){.game-dialog{width:100%;max-width:100%;min-width:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}}
